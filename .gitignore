@@ -1,0 +1,5 @@
+*.class
+.vscode/
+.qodo/
+bin/
+lib/
