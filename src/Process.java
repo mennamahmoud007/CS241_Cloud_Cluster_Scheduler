@@ -3,9 +3,10 @@ public class Process{
     private int arrivalTime;
     private int burstTime;
     private int remainingTime;
-    private int priority;
+    private int initialPriority;
     private int firstStartTime=-1;
     private int completionTime=-1;
+    private int tier2EntryTime = -1;
     public Process(String Id,int arrivaltime,int bursttime,int priority){
         if(Id == null || Id.isBlank() || arrivaltime < 0 || bursttime <= 0){
         throw new 
@@ -15,7 +16,7 @@ public class Process{
         this.arrivalTime=arrivaltime;
         this.burstTime=bursttime;
         this.remainingTime=bursttime;
-        this.priority=priority;
+        this.initialPriority=priority;
     }    
         public String getProcessId() {
             return processId;
@@ -33,8 +34,8 @@ public class Process{
            return remainingTime;
         }
 
-        public int getPriority() {
-           return priority;
+        public int getInitialPriority() {
+           return initialPriority;
         }
         public int getFirstStartTime() {
            return firstStartTime;
@@ -42,15 +43,16 @@ public class Process{
         public int getCompletionTime() {
            return completionTime;
         }
+         public int getTier2EntryTime() {
+            return tier2EntryTime;
+        }
         public void setRemainingTime(int remainingTime) {
            if(remainingTime >= 0 && remainingTime <= burstTime){
             this.remainingTime = remainingTime;
            } 
         }
 
-        public void setPriority(int priority) {
-           this.priority = priority;
-        }
+
         public void setFirstStartTime(int firstStartTime) {
            if(this.firstStartTime == -1 && firstStartTime >= 0){
             this.firstStartTime = firstStartTime;
@@ -62,6 +64,40 @@ public class Process{
             this.completionTime = completionTime;
            }
         }
+         public void setTier2EntryTime(int time) {
+            if (tier2EntryTime == -1 && time >= arrivalTime) {
+                  tier2EntryTime = time;
+            }
+         }
+
+         public boolean isCompleted() {
+            return remainingTime == 0;
+         }
+
+         public int getTurnaroundTime() {
+            return completionTime - arrivalTime;
+         }
+
+         public int getWaitingTime() {
+            return getTurnaroundTime() - burstTime;
+         }
+
+         public int getResponseTime() {
+            return firstStartTime - arrivalTime;
+         }
+
+         public int getEffectivePriority(int currentTime) {
+            if (tier2EntryTime == -1) {
+               return initialPriority;
+            }
+            int waitingTime = currentTime - tier2EntryTime;
+            int agingIntervals = waitingTime / 4;
+            return initialPriority - agingIntervals;
+         }
+         public Process copy() {
+            return new Process(this);
+         }
+         
         public Process(Process other){
             if(other == null){
                throw new IllegalArgumentException("Invalid process to copy");
@@ -70,11 +106,9 @@ public class Process{
             this.arrivalTime=other.arrivalTime;
             this.burstTime=other.burstTime;
             this.remainingTime=other.burstTime;
-            this.priority=other.priority;
+            this.initialPriority=other.initialPriority;
             this.firstStartTime=-1;
             this.completionTime=-1;
-
-
         }
 
     }

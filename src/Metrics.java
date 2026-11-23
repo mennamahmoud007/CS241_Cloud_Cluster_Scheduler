@@ -2,15 +2,15 @@ import java.util.ArrayList;
 public class Metrics{
 
     public static int calculateTurnaroundTime(Process p) {
-        return p.getCompletionTime() - p.getArrivalTime();
+        return p.getTurnaroundTime();
     }
 
     public static int calculateWaitingTime(Process p) {
-        return calculateTurnaroundTime(p) - p.getBurstTime();
+        return p.getWaitingTime();
     }
 
     public static int calculateResponseTime(Process p) {
-        return p.getFirstStartTime() - p.getArrivalTime();
+        return p.getResponseTime();
     }
     public static double calculateAverageWaitingTime(ArrayList<Process>processes){
         if(processes.isEmpty()){
