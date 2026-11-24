@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 
 public class Tier1 {
-    Queue<Process> readyQueue;
+    private Queue<Process> readyQueue;
     private List<Process> allProcesses;
     private int currentTime;
     private ACSScheduler tier2Scheduler;
