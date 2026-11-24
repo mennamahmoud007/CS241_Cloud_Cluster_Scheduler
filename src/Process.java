@@ -74,18 +74,6 @@ public class Process{
             return remainingTime == 0;
          }
 
-         public int getTurnaroundTime() {
-            return completionTime - arrivalTime;
-         }
-
-         public int getWaitingTime() {
-            return getTurnaroundTime() - burstTime;
-         }
-
-         public int getResponseTime() {
-            return firstStartTime - arrivalTime;
-         }
-
          public int getEffectivePriority(int currentTime) {
             if (tier2EntryTime == -1) {
                return initialPriority;

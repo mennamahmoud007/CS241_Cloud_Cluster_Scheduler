@@ -1,5 +1,21 @@
 import java.util.ArrayList;
 public class SJFScheduler {
+    private ArrayList<ScheduleEvent> schedule=new ArrayList<>();
+
+    private void addEvent(String name, int startTime, int endTime) {
+        if(startTime == endTime){
+            return;
+        }
+        if (!schedule.isEmpty()) {
+
+            ScheduleEvent lastEvent = schedule.get(schedule.size() - 1);
+            if (lastEvent.getName().equals(name) && lastEvent.getEndTime() == startTime) {
+                lastEvent.setEndTime(endTime);
+                return;
+            }
+        }
+        schedule.add(new ScheduleEvent(name, startTime, endTime));
+    }
 
     public Process selectShortestRemainingProcess(ArrayList<Process> processes, int currentTime) {
         Process shortest = null;
@@ -30,11 +46,14 @@ public class SJFScheduler {
             Process currentProcess=selectShortestRemainingProcess(processes,currentTime);
             
             if(previousProcess!=null && previousProcess != currentProcess){
+                int csstart=currentTime;
                 currentTime+=contextSwitchTime;
+                addEvent("CS", csstart, currentTime);
                 currentProcess=selectShortestRemainingProcess(processes,currentTime);
             }
             
             if(currentProcess==null){
+                addEvent("Idle", currentTime, currentTime + 1);
                 currentTime++;
                 continue;
             }
@@ -43,16 +62,21 @@ public class SJFScheduler {
                 currentProcess.setFirstStartTime(currentTime);
             }
             previousProcess=currentProcess;
+            addEvent(currentProcess.getProcessId(), currentTime, currentTime + 1);
             currentProcess.setRemainingTime(currentProcess.getRemainingTime()-1);
             currentTime++;
             if(currentProcess.getRemainingTime()==0){
                 completed++;
+                int csstart=currentTime;
                 currentTime+=contextSwitchTime;
+                addEvent("CS", csstart, currentTime);
                 currentProcess.setCompletionTime(currentTime);
                 previousProcess=null;
             }
             
         }
+        GanttChart.print(schedule);
+        Metrics.printResults(processes);
 
     }   
 

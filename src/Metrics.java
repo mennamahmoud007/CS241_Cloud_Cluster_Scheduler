@@ -1,16 +1,16 @@
 import java.util.ArrayList;
 public class Metrics{
 
-    public static int calculateTurnaroundTime(Process p) {
-        return p.getTurnaroundTime();
+ public static int calculateTurnaroundTime(Process p) {
+        return p.getCompletionTime() - p.getArrivalTime();
     }
 
     public static int calculateWaitingTime(Process p) {
-        return p.getWaitingTime();
+        return calculateTurnaroundTime(p) - p.getBurstTime();
     }
 
     public static int calculateResponseTime(Process p) {
-        return p.getResponseTime();
+        return p.getFirstStartTime() - p.getArrivalTime();
     }
     public static double calculateAverageWaitingTime(ArrayList<Process>processes){
         if(processes.isEmpty()){
@@ -33,6 +33,20 @@ public class Metrics{
             totalTurnaroundTime+=calculateTurnaroundTime(processes.get(i));
         }
         return (double) totalTurnaroundTime/(processCount);
+    }
+
+        public static void printResults(ArrayList<Process> processes) {
+
+        System.out.println("\nScheduling Results:");
+
+        for (Process p : processes) {
+            System.out.println("\nProcess: " + p.getProcessId());
+            System.out.println("Waiting Time: " + calculateWaitingTime(p));
+            System.out.println("Turnaround Time: " + calculateTurnaroundTime(p));
+            System.out.println("Response Time: " + calculateResponseTime(p));
+        }
+        System.out.println("\nAverage Waiting Time: " + calculateAverageWaitingTime(processes));
+        System.out.println("Average Turnaround Time: " + calculateAverageTurnaroundTime(processes));
     }
 
 }
