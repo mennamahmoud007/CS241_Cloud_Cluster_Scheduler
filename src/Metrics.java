@@ -42,6 +42,20 @@ public class Metrics{
         return (double) totalTurnaroundTime/(processCount);
     }
 
+    public static double calculateAverageResponseTime(ArrayList<Process> processes){
+        if(processes.isEmpty()){
+            return 0.0;
+        }
+
+        int totalResponseTime = 0;
+        int processCount = processes.size();
+
+        for(int i = 0; i < processCount; i++){
+            totalResponseTime += calculateResponseTime(processes.get(i));
+        }
+        return (double) totalResponseTime/(processCount);
+    }
+
     public static void printResults(ArrayList<Process> processes) {
         System.out.println("\nScheduling Results:");
         for (Process p : processes) {
@@ -52,6 +66,7 @@ public class Metrics{
         }
         System.out.println("\nAverage Waiting Time: " + calculateAverageWaitingTime(processes));
         System.out.println("Average Turnaround Time: " + calculateAverageTurnaroundTime(processes));
+        System.out.println("Average Response Time: " + calculateAverageResponseTime(processes));
     }
 
 }
