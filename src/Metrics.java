@@ -25,7 +25,8 @@ public class Metrics{
             totalWaitingTime += calculateWaitingTime(processes.get(i));
         }
 
-        return (double) totalWaitingTime/(processCount);
+        double avg = (double) totalWaitingTime/(processCount);
+        return Math.round(avg * 10000.0) / 10000.0;
     }
 
     public static double calculateAverageTurnaroundTime(ArrayList<Process>processes){
@@ -39,7 +40,8 @@ public class Metrics{
         for(int i = 0; i < processCount; i++){
             totalTurnaroundTime += calculateTurnaroundTime(processes.get(i));
         }
-        return (double) totalTurnaroundTime/(processCount);
+        double avg = (double) totalTurnaroundTime/(processCount);
+        return Math.round(avg * 10000.0) / 10000.0;
     }
 
     public static double calculateAverageResponseTime(ArrayList<Process> processes){
@@ -53,7 +55,8 @@ public class Metrics{
         for(int i = 0; i < processCount; i++){
             totalResponseTime += calculateResponseTime(processes.get(i));
         }
-        return (double) totalResponseTime/(processCount);
+        double avg =  (double) totalResponseTime/(processCount);
+        return Math.round(avg * 10000.0) / 10000.0;
     }
 
     public static void printResults(ArrayList<Process> processes) {
@@ -64,9 +67,9 @@ public class Metrics{
             System.out.println("Turnaround Time: " + calculateTurnaroundTime(p));
             System.out.println("Response Time: " + calculateResponseTime(p));
         }
-        System.out.printf("\nAverage Waiting Time: %.4f%n" , calculateAverageWaitingTime(processes));
-        System.out.printf("Average Turnaround Time: %.4f%n" , calculateAverageTurnaroundTime(processes));
-        System.out.printf("Average Response Time: %.4f%n" , calculateAverageResponseTime(processes));
+        System.out.println("\nAverage Waiting Time: " + calculateAverageWaitingTime(processes));
+        System.out.println("Average Turnaround Time: " + calculateAverageTurnaroundTime(processes));
+        System.out.println("Average Response Time: " + calculateAverageResponseTime(processes));
     }
 
 }
