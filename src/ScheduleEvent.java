@@ -1,4 +1,3 @@
-
 public class ScheduleEvent {
     private String name;
     private int startTime;
