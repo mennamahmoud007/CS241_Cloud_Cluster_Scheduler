@@ -33,6 +33,14 @@ public class ACSScheduler {
                 tier1.snapshot(hidden), tier2.snapshot(time, hidden));
     }
 
+    private int contextSwitch(int time, int cs) {
+        for (int i = 0; i < cs; i++) {
+            record(time + i, "CS", null);
+        }
+        addEvent("CS", time, time + cs);
+        return time + cs;
+    }
+
     public void run(ArrayList<Process> processes, int quantum, int contextSwitchTime) {
         if (processes == null || processes.isEmpty()) {
             throw new IllegalArgumentException("Process list cannot be null or empty");
@@ -76,12 +84,7 @@ public class ACSScheduler {
 
             int decisionTime = currentTime;
             if (previous != null && previous != next) {
-                int csStart = currentTime;
-                for (int i = 0; i < contextSwitchTime; i++) {
-                    record(currentTime, "CS", null);
-                    currentTime++;
-                }
-                addEvent("CS", csStart, currentTime);
+                currentTime = contextSwitch(currentTime, contextSwitchTime);
             }
 
             int start = currentTime;
@@ -94,17 +97,21 @@ public class ACSScheduler {
                 tier1.poll();
                 currentTime = tier1.runSlice(next, start);
                 tier1.admitArrivals(currentTime);
-                if (next.isCompleted()) {
-                    completed++;
-                } else {
+                if (!next.isCompleted()) {
                     tier2.demote(next, currentTime);
                 }
             } else {
                 currentTime = tier2.execute(next, start);
-                completed++;
             }
             addEvent(next.getProcessId(), start, currentTime);
-            previous = next;
+            if (next.isCompleted()) {
+                completed++;
+                currentTime = contextSwitch(currentTime, contextSwitchTime);
+                next.setCompletionTime(currentTime);
+                previous = null;
+            } else {
+                previous = next;
+            }
         }
 
         record(currentTime, "-", null);

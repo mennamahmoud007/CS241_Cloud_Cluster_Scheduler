@@ -56,9 +56,9 @@ public class Tier1 {
         int executed = Math.min(p.getRemainingTime(), quantum);
         p.setRemainingTime(p.getRemainingTime() - executed);
         int endTime = startTime + executed;
-        if (p.isCompleted()) {
-            p.setCompletionTime(endTime);
-        }
+        // if (p.isCompleted()) {
+        //     p.setCompletionTime(endTime);
+        // }
         return endTime;
     }
 

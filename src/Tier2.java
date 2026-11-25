@@ -67,7 +67,7 @@ public class Tier2 {
         }
         int endTime = startTime + p.getRemainingTime();
         p.setRemainingTime(0);
-        p.setCompletionTime(endTime);
+        // p.setCompletionTime(endTime);
         queue.remove(p);
         return endTime;
     }
