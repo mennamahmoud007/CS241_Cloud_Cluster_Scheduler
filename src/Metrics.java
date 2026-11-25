@@ -64,9 +64,9 @@ public class Metrics{
             System.out.println("Turnaround Time: " + calculateTurnaroundTime(p));
             System.out.println("Response Time: " + calculateResponseTime(p));
         }
-        System.out.println("\nAverage Waiting Time: " + calculateAverageWaitingTime(processes));
-        System.out.println("Average Turnaround Time: " + calculateAverageTurnaroundTime(processes));
-        System.out.println("Average Response Time: " + calculateAverageResponseTime(processes));
+        System.out.printf("\nAverage Waiting Time: %.4f%n" , calculateAverageWaitingTime(processes));
+        System.out.printf("Average Turnaround Time: %.4f%n" , calculateAverageTurnaroundTime(processes));
+        System.out.printf("Average Response Time: %.4f%n" , calculateAverageResponseTime(processes));
     }
 
 }
