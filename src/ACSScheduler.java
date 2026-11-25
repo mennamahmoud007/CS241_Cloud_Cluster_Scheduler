@@ -1,106 +1,114 @@
 import java.util.ArrayList;
 
 public class ACSScheduler {
-    public static final int DEFAULT_AGING_INTERVAL = 4;
-
-    private final ArrayList<Process> tier2Queue = new ArrayList<>();
-    private final int agingInterval;
+    private final ArrayList<ScheduleEvent> schedule = new ArrayList<>();
+    private final Tier2 tier2;
+    private Tier1 tier1;
 
     public ACSScheduler() {
-        this(DEFAULT_AGING_INTERVAL);
+        this(Tier3.DEFAULT_AGING_INTERVAL);
     }
 
     public ACSScheduler(int agingInterval) {
-        if (agingInterval <= 0) {
-            throw new IllegalArgumentException("Aging interval must be positive");
-        }
-        this.agingInterval = agingInterval;
+        this.tier2 = new Tier2(new Tier3(agingInterval));
     }
 
-    public int getAgingInterval() {
-        return agingInterval;
-    }
-
-    public int calculateEffectivePriority(Process p, int currentTime) {
-        if (p.getTier2EntryTime() == -1) {
-            return p.getInitialPriority();
-        }
-        int waitingTime = Math.max(0, currentTime - p.getTier2EntryTime());
-        return p.getInitialPriority() - (waitingTime / agingInterval);
-    }
-
-    public void demoteToTier2(Process p, int currentTime) {
-        if (p == null || p.isCompleted()) {
+    private void addEvent(String name, int startTime, int endTime) {
+        if (startTime == endTime) {
             return;
         }
-        p.setTier2EntryTime(currentTime);
-        if (!tier2Queue.contains(p)) {
-            tier2Queue.add(p);
+        if (!schedule.isEmpty()) {
+            ScheduleEvent last = schedule.get(schedule.size() - 1);
+            if (last.getName().equals(name) && last.getEndTime() == startTime) {
+                last.setEndTime(endTime);
+                return;
+            }
         }
+        schedule.add(new ScheduleEvent(name, startTime, endTime));
     }
 
-    public boolean isTier2Empty() {
-        return tier2Queue.isEmpty();
+    private void record(int time, String label, Process hidden) {
+        tier1.admitArrivals(time);
+        System.out.printf("%-6d %-8s %s | %s%n", time, label,
+                tier1.snapshot(hidden), tier2.snapshot(time, hidden));
     }
 
-    public ArrayList<Process> getTier2Queue() {
-        return new ArrayList<>(tier2Queue);
-    }
+    public void run(ArrayList<Process> processes, int quantum, int contextSwitchTime) {
+        if (processes == null || processes.isEmpty()) {
+            throw new IllegalArgumentException("Process list cannot be null or empty");
+        }
+        if (quantum <= 0) {
+            throw new IllegalArgumentException("Quantum must be positive");
+        }
+        if (contextSwitchTime < 0) {
+            throw new IllegalArgumentException("Context switch time cannot be negative");
+        }
+        tier2.clear();
+        schedule.clear();
+        tier1 = new Tier1(quantum, processes);
 
-    public Process selectNextTier2Process(int currentTime) {
-        Process best = null;
-        for (Process p : tier2Queue) {
-            if (p.isCompleted()) {
+        int total = processes.size();
+        int completed = 0;
+        int currentTime = 0;
+        Process previous = null;
+
+        System.out.println("\nDemotion Matrix (Q = " + quantum + ", CS = " + contextSwitchTime + "):");
+        System.out.printf("%-6s %-8s %s%n", "Time", "Process", "Tier State");
+
+        while (completed < total) {
+            tier1.admitArrivals(currentTime);
+
+            Process next;
+            boolean fromTier1 = !tier1.isEmpty();
+            if (fromTier1) {
+                next = tier1.peek();
+            } else {
+                next = tier2.selectNext(currentTime);
+            }
+
+            if (next == null) {
+                record(currentTime, "Idle", null);
+                addEvent("Idle", currentTime, currentTime + 1);
+                currentTime++;
+                previous = null;
                 continue;
             }
-            if (best == null || hasHigherPriority(p, best, currentTime)) {
-                best = p;
+
+            int decisionTime = currentTime;
+            if (previous != null && previous != next) {
+                int csStart = currentTime;
+                for (int i = 0; i < contextSwitchTime; i++) {
+                    record(currentTime, "CS", null);
+                    currentTime++;
+                }
+                addEvent("CS", csStart, currentTime);
             }
-        }
-        return best;
-    }
 
-    private boolean hasHigherPriority(Process a, Process b, int currentTime) {
-        int pa = calculateEffectivePriority(a, currentTime);
-        int pb = calculateEffectivePriority(b, currentTime);
-        if (pa != pb) {
-            return pa < pb;
-        }
-        if (a.getTier2EntryTime() != b.getTier2EntryTime()) {
-            return a.getTier2EntryTime() < b.getTier2EntryTime();
-        }
-        return a.getArrivalTime() < b.getArrivalTime();
-    }
-
-    public int executeTier2Process(Process p, int startTime) {
-        if (p == null || !tier2Queue.contains(p)) {
-            throw new IllegalArgumentException("Process is not in Tier 2");
-        }
-        if (p.getFirstStartTime() == -1) {
-            p.setFirstStartTime(startTime);
-        }
-        int endTime = startTime + p.getRemainingTime();
-        p.setRemainingTime(0);
-        p.setCompletionTime(endTime);
-        tier2Queue.remove(p);
-        return endTime;
-    }
-
-    public String tier2Snapshot(int currentTime) {
-        if (tier2Queue.isEmpty()) {
-            return "Tier 2: [Empty]";
-        }
-        StringBuilder sb = new StringBuilder("Tier 2: [");
-        for (int i = 0; i < tier2Queue.size(); i++) {
-            Process p = tier2Queue.get(i);
-            if (i > 0) {
-                sb.append(", ");
+            int start = currentTime;
+            int end = fromTier1 ? tier1.sliceEnd(next, start) : start + next.getRemainingTime();
+            for (int t = start; t < end; t++) {
+                record(t, next.getProcessId(), t == decisionTime ? null : next);
             }
-            sb.append(p.getProcessId())
-              .append(" (remaining: ").append(p.getRemainingTime())
-              .append(", Priority: ").append(calculateEffectivePriority(p, currentTime))
-              .append(")");
+
+            if (fromTier1) {
+                tier1.poll();
+                currentTime = tier1.runSlice(next, start);
+                tier1.admitArrivals(currentTime);
+                if (next.isCompleted()) {
+                    completed++;
+                } else {
+                    tier2.demote(next, currentTime);
+                }
+            } else {
+                currentTime = tier2.execute(next, start);
+                completed++;
+            }
+            addEvent(next.getProcessId(), start, currentTime);
+            previous = next;
         }
-        return sb.append("]").toString();
+
+        record(currentTime, "-", null);
+        GanttChart.print(schedule);
+        Metrics.printResults(processes);
     }
 }
