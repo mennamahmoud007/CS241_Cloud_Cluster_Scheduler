@@ -85,6 +85,13 @@ public class ACSScheduler {
             int decisionTime = currentTime;
             if (previous != null && previous != next) {
                 currentTime = contextSwitch(currentTime, contextSwitchTime);
+                tier1.admitArrivals(currentTime);
+                fromTier1 = !tier1.isEmpty();
+                if (fromTier1) {
+                    next = tier1.peek();
+                } else {
+                    next = tier2.selectNext(currentTime);
+                }
             }
 
             int start = currentTime;

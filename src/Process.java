@@ -81,15 +81,6 @@ public class Process{
    public boolean isCompleted() {
       return remainingTime == 0;
    }
-
-   public int getEffectivePriority(int currentTime) {
-      if (tier2EntryTime == -1) {
-         return initialPriority;
-      }
-      int waitingTime = currentTime - tier2EntryTime;
-      int agingIntervals = waitingTime / 4;
-      return initialPriority - agingIntervals;
-   }
    
    public Process copy() {
       return new Process(this);
